@@ -1,0 +1,109 @@
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from matplotlib.colors import ListedColormap
+import matplotlib.pyplot as plt
+
+
+class KnnClassifier:
+    def __init__(self, x, y, test_size, n_neighbours, metric, p, rd):
+        """
+        K-Nearest Neighbors classifier. Supervised Learning Classifier, which uses proximity to make classifications or
+        predictions about the grouping of an individual data point. Working off the assumption that similar points can
+        be found near one another.
+
+        Pros: Simple to understand, fast and efficient
+        Cons: Need to choose the number of neighbours k
+
+
+        param x: Independent features array.
+        param y: Dependent features array.
+        param test_size: Number from 0 to 1. Eg .25 means test size equals 25%.
+        param n_neighbours: The n nearest neighbours that will assign the label. As we increase the number of
+        neighbors, the model starts to generalize well, but increasing the value too much would again drop the
+        performance.
+        param metric: The default metric is minkowski, and with p=2 is equivalent to the standard Euclidean metric.
+        When p is set to 1, this is equivalent to using the manhattan_distance
+        param p: the p of the Minkowski formula.
+
+        """
+        x_train, x_test, self.y_train, self.y_test = train_test_split(x, y,
+                                                                      test_size=test_size, random_state=rd)
+        self.sc_X = StandardScaler()
+        self.x_trans_train = self.sc_X.fit_transform(x_train)
+        self.x_trans_test = self.sc_X.transform(x_test)
+        self.classifier = KNeighborsClassifier(n_neighbors=n_neighbours, metric=metric, p=p)
+        self.classifier.fit(self.x_trans_train, self.y_train)
+
+    def show_prediction_results(self):
+        """
+        Calculate the distance between the data sample and every other sample with the help of a method such as
+        Euclidean. Sort these values (distances) in ascending order. Choose the top K values from the sorted distances.
+        Assign the class to the sample based on the most frequent class in the above K values.
+        Prints a list of all the predicted results vs the real ones and a Confusion Matrix.
+
+        :return: accuracy score.
+        """
+        y_predict = self.classifier.predict(self.x_trans_test)
+        print('\nPredicted Array')
+        print(y_predict)
+        print('\n[[Predicted Result, Real Result]]')
+        print(np.concatenate((y_predict.reshape(len(y_predict), 1), self.y_test.reshape(len(self.y_test), 1)), 1))
+
+        print('\nConfusion Matrix: '
+              '\n[[TP FP]'
+              '\n [FP TN]]')
+        cm = confusion_matrix(self.y_test, y_predict)
+        print(cm)
+        print('\nAccuracy Score KnnClassifier: ')
+        a_s = accuracy_score(self.y_test, y_predict)
+        return a_s
+
+    def single_predict(self, *args):
+        """
+        Predicts the category of the independent features passed as args.
+
+        :param args: independent features of the dataset.
+
+        :return: the predicted category for the independent features.
+        """
+        y_single_predict = self.classifier.predict(self.sc_X.transform([[*args]]))
+        return y_single_predict
+
+    def visualize_train(self):
+
+        x_set, y_set = self.sc_X.inverse_transform(self.x_trans_train), self.y_train
+        x1, x2 = np.meshgrid(np.arange(start=x_set[:, 0].min() - 10, stop=x_set[:, 0].max() + 10, step=0.25),
+                             np.arange(start=x_set[:, 1].min() - 1000, stop=x_set[:, 1].max() + 1000, step=0.25))
+        plt.contourf(x1, x2, self.classifier.predict(self.sc_X.transform(np.array([x1.ravel(), x2.ravel()]).T)).reshape(
+            x1.shape),
+                     alpha=0.75, cmap=ListedColormap(('red', 'green')))
+        plt.xlim(x1.min(), x1.max())
+        plt.ylim(x2.min(), x2.max())
+        for i, j in enumerate(np.unique(y_set)):
+            plt.scatter(x_set[y_set == j, 0], x_set[y_set == j, 1], c=ListedColormap(('red', 'green'))(i), label=j)
+        plt.title('KNN (Training set)')
+        plt.xlabel('Age')
+        plt.ylabel('Estimated Salary')
+        plt.legend()
+        plt.show()
+
+    def visualize_test(self):
+        x_set, y_set = self.sc_X.inverse_transform(self.x_trans_test), self.y_test
+        x1, x2 = np.meshgrid(np.arange(start=x_set[:, 0].min() - 10, stop=x_set[:, 0].max() + 10, step=0.25),
+                             np.arange(start=x_set[:, 1].min() - 1000, stop=x_set[:, 1].max() + 1000, step=0.25))
+        plt.contourf(x1, x2, self.classifier.predict(self.sc_X.transform(np.array([x1.ravel(), x2.ravel()]).T)).reshape(
+            x1.shape),
+                     alpha=0.75, cmap=ListedColormap(('red', 'green')))
+        plt.xlim(x1.min(), x1.max())
+        plt.ylim(x2.min(), x2.max())
+        for i, j in enumerate(np.unique(y_set)):
+            plt.scatter(x_set[y_set == j, 0], x_set[y_set == j, 1], c=ListedColormap(('red', 'green'))(i), label=j)
+        plt.title('KNN (Test set)')
+        plt.xlabel('Age')
+        plt.ylabel('Estimated Salary')
+        plt.legend()
+        plt.show()
