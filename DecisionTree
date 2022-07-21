@@ -74,8 +74,8 @@ class DecisionTree:
         for i, j in enumerate(np.unique(y_set)):
             plt.scatter(x_set[y_set == j, 0], x_set[y_set == j, 1], c=ListedColormap(('red', 'green'))(i), label=j)
         plt.title('DecisionTree Classification_Models (Training set)')
-        plt.xlabel('Age')
-        plt.ylabel('Estimated Salary')
+        plt.xlabel('Name for x')
+        plt.ylabel('Name for y')
         plt.show()
 
     def visualize_test(self):
@@ -91,6 +91,6 @@ class DecisionTree:
         for i, j in enumerate(np.unique(y_set)):
             plt.scatter(x_set[y_set == j, 0], x_set[y_set == j, 1], c=ListedColormap(('red', 'green'))(i), label=j)
         plt.title('DecisionTree Classification_Models (Test set)')
-        plt.xlabel('Age')
-        plt.ylabel('Estimated Salary')
+        plt.xlabel('Name for x')
+        plt.ylabel('Name for y')
         plt.show()
