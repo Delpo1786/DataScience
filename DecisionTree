@@ -16,8 +16,8 @@ class DecisionTree:
         Pros: Interpretability, no need for feature scaling, works on both linear / nonlinear problems.
         Cons: Poor results on too small datasets, over-fitting can easily occur.
 
-        param x: Independent features columns.
-        param y: Dependent features' column.
+        param x: Independent features array.
+        param y: Dependent features' array.
         param test_size: Number form 0 to 1 representing 0 to 100%.
         param criterion: use 'gini' or 'entropy'.
         param rd: Random state, number from 0 to 10. Use it to compare predictions.
