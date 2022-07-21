@@ -1,0 +1,96 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import ListedColormap
+from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+
+
+class DecisionTree:
+    def __init__(self, x, y, criterion, test_size, rd):
+        """
+        Observes features of an object and trains a model in the structure of a tree to predict data.
+        Use it when you want to have clear interpretation of your model results.
+
+        Pros: Interpretability, no need for feature scaling, works on both linear / nonlinear problems.
+        Cons: Poor results on too small datasets, over-fitting can easily occur.
+
+        param x: Independent features columns.
+        param y: Dependent features' column.
+        param test_size: Number form 0 to 1 representing 0 to 100%.
+        param criterion: use 'gini' or 'entropy'.
+        param rd: Random state, number from 0 to 10. Use it to compare predictions.
+
+        """
+
+        x_train, x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=test_size, random_state=rd)
+        self.sc_X = StandardScaler()
+        self.x_trans_train = self.sc_X.fit_transform(x_train)
+        self.x_trans_test = self.sc_X.transform(x_test)
+        self.classifier = DecisionTreeClassifier(criterion=criterion, random_state=rd)
+        self.classifier.fit(self.x_trans_train, self.y_train)
+
+    def show_prediction_results(self):
+        """
+        Predicts the values of the test set and prints the predicted results vs the real results, for each
+        test case. Prints a confusion Matrix showing true positives, false positives, true negatives and
+        false negatives.
+
+        :return: prediction score.
+
+        """
+        y_predict = self.classifier.predict(self.x_trans_test)
+        print('\n[[Predicted Result, Real Result]]')
+        print(np.concatenate((y_predict.reshape(len(y_predict), 1), self.y_test.reshape(len(self.y_test), 1)), 1))
+
+        print('\nConfusion Matrix: '
+              '\n[[TP FP]'
+              '\n [FP TN]]')
+        cm = confusion_matrix(self.y_test, y_predict)
+        print(cm)
+        print('\nAccuracy Score: ')
+        a_s = accuracy_score(self.y_test, y_predict)
+
+        return a_s
+
+    def single_prediction(self, *args):
+        """
+        Predicts the dependent feature based on the provided independent features.
+        :param args: dependent features.
+        :return: predicted dependent feature.
+        """
+        y_single_predict = self.classifier.predict(self.sc_X.transform([[*args]]))
+        return y_single_predict
+
+    def visualize_train(self):
+        x_set, y_set = self.sc_X.inverse_transform(self.x_trans_train), self.y_train
+        x1, x2 = np.meshgrid(np.arange(start=x_set[:, 0].min() - 10, stop=x_set[:, 0].max() + 10, step=0.25),
+                             np.arange(start=x_set[:, 1].min() - 1000, stop=x_set[:, 1].max() + 1000, step=0.25))
+        plt.contourf(x1, x2, self.classifier.predict(self.sc_X.transform(np.array([x1.ravel(), x2.ravel()]).T)).reshape(
+            x1.shape), alpha=0.75, cmap=ListedColormap(('red', 'green')))
+        plt.xlim(x1.min(), x1.max())
+        plt.ylim(x2.min(), x2.max())
+        for i, j in enumerate(np.unique(y_set)):
+            plt.scatter(x_set[y_set == j, 0], x_set[y_set == j, 1], c=ListedColormap(('red', 'green'))(i), label=j)
+        plt.title('DecisionTree Classification_Models (Training set)')
+        plt.xlabel('Age')
+        plt.ylabel('Estimated Salary')
+        plt.show()
+
+    def visualize_test(self):
+
+        x_set, y_set = self.sc_X.inverse_transform(self.x_trans_test), self.y_test
+        x1, x2 = np.meshgrid(np.arange(start=x_set[:, 0].min() - 10, stop=x_set[:, 0].max() + 10, step=0.25),
+                             np.arange(start=x_set[:, 1].min() - 1000, stop=x_set[:, 1].max() + 1000, step=0.25))
+        plt.contourf(x1, x2,
+                     self.classifier.predict(self.sc_X.transform(np.array([x1.ravel(), x2.ravel()]).T)).reshape(
+                         x1.shape), alpha=0.75, cmap=ListedColormap(('red', 'green')))
+        plt.xlim(x1.min(), x1.max())
+        plt.ylim(x2.min(), x2.max())
+        for i, j in enumerate(np.unique(y_set)):
+            plt.scatter(x_set[y_set == j, 0], x_set[y_set == j, 1], c=ListedColormap(('red', 'green'))(i), label=j)
+        plt.title('DecisionTree Classification_Models (Test set)')
+        plt.xlabel('Age')
+        plt.ylabel('Estimated Salary')
+        plt.show()
