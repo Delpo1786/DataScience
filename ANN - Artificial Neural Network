@@ -1,0 +1,136 @@
+import tensorflow as tf
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, accuracy_score, r2_score
+
+
+# print(tf.__version__)
+
+
+class ArtificialNeuralNet:
+    def __init__(self, test_size, rd, x, y):
+        """
+        Always set the last column as the dependent variable, each independent feature configures a separate neuron.
+        Exclude columns that don't contribute to the final prediction. Independent features should be
+        encoded before using the data set (both label encoded and categorical data).
+
+        1) Randomly initialise the weights to small numbers close to zero (but not equal to zero).
+        2) Input the first observation of your dataset in the input layer, each feature in one input node.
+        3) Forward propagation until getting the predicted result.
+        4) Compare the predicted result with the real result. Measure the generated error.
+        5) Backpropagation. Update the weights according to how much they are responsible for the error. The learning
+           rate decides how much we update the weights.
+        6) Repeat Steps 1 to 5 and update the weights after each observation (Reinforcement learning) or Repeat Steps 1
+           to 5 and update the weights only after a batch of observations (Batch Learning).
+
+        :param y: columns and rows of the independent variables.
+        :param x: columns and rows of the dependent variables.
+        :param test_size: number from 0 to 1 (0.25=25%)
+        :param rd: random state to compare.
+        """
+
+        x_train, x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=test_size, random_state=rd)
+
+        self.sc = StandardScaler()
+        self.X_train = self.sc.fit_transform(x_train)
+        self.x_test = self.sc.transform(x_test)
+        self.activation = None
+
+    def initialise_ann(self, optimizer, loss, metrics, epochs, batch_size, output_activation):
+        """
+        Initialise the ann as a sequence of layers. In the new version of tensorflow, keras was integrated inside the
+        module. With Dense class, we add more layers. Unit represents the number of hidden neurons (this number is
+        based on experimentation, test manu cases).
+        The sign will be forward, propagated up to the last layer (and get a prediction). The prediction will be
+        compared to the real results. This will incur a loss, which will be exactly the squared difference between
+        the predicted energy output and the real one. After getting a loss, backprop algorithm will start and stochastic
+        gradient descent plus its optimizer will reduce it.
+
+        :param metrics: 'accuracy' works for classification. 'None' can be used for regression.
+        :param batch_size: instead of comparing the predictions 1v1, we will do it by batch. 32 usually work well.
+        :param output_activation: use sigmoid for binary and softmax for non-binary classification.
+        If you are doing regression use 'None' (or linear). Sigmoid returns a probability.
+        :param epochs: feel free to choose any number above 100. Check how fast it converges. Check how many features
+        we are working with.
+        :param optimizer: refer to the tool on which we are performing stochastic gradient descent. 'adam' - is
+        considered one of the best optimizers for stochastic gradient descent.
+        :param loss: 'binary_crossentropy' - use this as binary loss function. If it is non-binary CLASSIFICATION
+        we should use categorical_crossentropy. If it is a regression problem "mean_squared_error"
+        can be used ('root_mean_squared_error').
+
+        :return:trained ann.
+
+        """
+        self.activation = output_activation
+        # Create an ANN in a sequence
+        ann = tf.keras.models.Sequential()
+        # Adding the first HIDDEN layer. activation function ===> Relu to break linearity.
+        ann.add(tf.keras.layers.Dense(units=6, activation='relu'))
+        # Adding the second HIDDEN layer
+        ann.add(tf.keras.layers.Dense(units=6, activation='relu'))
+        # Adding the second OUTPUT layer
+        ann.add(tf.keras.layers.Dense(units=1, activation=output_activation))
+        # Compile the ANN
+        ann.compile(optimizer=optimizer, loss=loss, metrics=[metrics])
+        # Training the ANN object.
+        ann.fit(self.X_train, self.y_train, batch_size=batch_size, epochs=epochs)
+
+        return ann
+
+    def prediction_classification(self, ann):
+        """
+        Predicts over the test set returning a number from 0 to 1 (probabilities) for each test case, then if the
+        number is above 0.5, the prediction is labeled as true. Prints a confusion matrix with TP,FP,TN,FN.
+
+        param ann: trained artificial neural network.
+        return: accuracy score
+        """
+        y_prediction = ann.predict(self.x_test)
+        y_prediction = (y_prediction > 0.5)
+        # The dependent variable vector was horizontal, so we need to reshape it.
+        print('\rReal Results vs Predicted Results')
+        print(np.concatenate((y_prediction.reshape(len(y_prediction), 1), self.y_test.reshape(len(self.y_test), 1)), 1))
+        cm = confusion_matrix(self.y_test, y_prediction)
+        print('\rConfusion Matrix')
+        print(cm)
+        ac = accuracy_score(self.y_test, y_prediction)
+        print('--------END OF REPORT------------')
+        return ac
+
+    def prediction_regression(self, ann, precision):
+        """
+        Predicts number results over the test set.
+
+        param ann: trained artificial neural network.
+        param precision: Number of decimals of each prediction.
+        return: accuracy score.
+        """
+        y_prediction = ann.predict(self.x_test)
+        np.set_printoptions(precision=precision)
+        # The dependent variable vector was horizontal, so we need to reshape it.
+        print('\rReal Results vs Predicted Results')
+        print(np.concatenate((y_prediction.reshape(len(y_prediction), 1), self.y_test.reshape(len(self.y_test), 1)), 1))
+        ac = r2_score(self.y_test, y_prediction)
+        print('--------END OF REPORT------------')
+
+        return ac
+
+    def single_prediction(self, ann, array):
+        """
+        Binary Classification:
+        Use the sigmoid function to get a single prediction according to the features. Sigmoid goes from
+        0 to 1 in an 'S' form, if the value predicted is greater than 0.5 is considered as True.
+
+        :param ann: trained artificial neural network.
+        :param array: Encoded parameters.
+
+        :return: Boolean, depending on if the predicted value is > or < than 0.5.
+        """
+        single_prediction = ann.predict(self.sc.transform(array))
+        if self.activation == 'sigmoid' or self.activation == 'softmax':
+            print('Labeled as:')
+        else:
+            print("Predicted number")
+
+        return single_prediction
