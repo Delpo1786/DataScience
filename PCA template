@@ -1,0 +1,81 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+
+class PrincipalCA:
+    def __init__(self, test_size, x, y, components):
+        '''
+        Dimensionality reduction algorithm. Unsupervised learning. It looks for CORRELATION between variables.
+        Identify PATTERNS in data. HIGHLY affected by outliers in the data.
+        Reduce the dimension of a d-dimensional dataset by projecting it into a k-dimensional subspace where d>k.
+        Applications: Noise Filtering
+                      Visualization
+                      Feature Extraction
+                      Stock Market Predictions
+                      Gene Data Analysis
+        Steps:
+        1) Standardize the data
+        2) Obtain the Eigenvectors and Eigenvalues from the covariance matrix or correlation matrix, or perform
+        Singular Vector Decomposition.
+        3) Sort the eigenvalues in descending order and choose the k eigenvectors that correspond to the k largest
+        eigenvalues where k is the number of dimensions of the new feature subspace (k<d)/.
+        4) Construct the projection matrix W from the selected k eigenvectors.
+        5) Transform the original dataset X via W to obtain a k-dimensional feature subspace Y.
+
+        :param components: new dimensionality.
+        :param x: independent features
+        :param y: dependent feature
+        '''
+
+        x_train, x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=test_size, random_state=42)
+        sc = StandardScaler()
+        self.x_train = sc.fit_transform(x_train)
+        self.x_test = sc.transform(x_test)
+        print('\rX_train before PCA (first 3 rows): ')
+        print(self.x_train[:3, :])
+        print('-' * 80)
+        print('\rX_train size: {}'.format(np.shape(self.x_train)))
+        print('-' * 80)
+        self.components = components
+        self.pca_ = PCA(n_components=components)
+        self.apply_pca()
+
+    def apply_pca(self):
+        '''
+        Extracts the features which explain best the variance. Set up to work with LogisticRegression.
+        '''
+        self.x_train = self.pca_.fit_transform(self.x_train)
+        self.x_test = self.pca_.transform(self.x_test)
+        print('\rX_train after PCA (first 10 rows): ')
+        print(self.x_train[:3, :])
+        print('-' * 80)
+        print('\rX_train size: {}'.format(np.shape(self.x_train)))
+        print('-' * 80)
+
+    def plot_graph(self):
+        if self.components in [2, 3]:
+            z = self.x_train[:, 1]
+            x = self.x_train[:, 0]
+            fig = plt.figure(figsize=(6, 6))
+            ax = fig.add_subplot(111, projection='3d')
+            ax.scatter(x, z, self.y_train, c='blue')
+            plt.title('PCA component={}'.format(self.components))
+            ax.set_zlabel('Customer_Segment')
+            ax.set_xlabel('PCA1')
+            ax.set_ylabel('PCA2')
+            plt.show()
+        else:
+            print('plot_graph only works for components = 2 and 3')
+
+    def scree_plot(self):
+        print('\rVariance Ratio: ')
+        print(self.pca_.explained_variance_ratio_)
+        set_components = np.arange(self.components) + 1
+        plt.plot(set_components, self.pca_.explained_variance_ratio_, 'o-', linewidth='2', color='red')
+        plt.title('Scree Plot')
+        plt.xlabel('Principal Component')
+        plt.ylabel('Variance Explained')
+        plt.show()
