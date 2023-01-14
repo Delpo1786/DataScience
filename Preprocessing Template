@@ -1,0 +1,84 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+#########################################################################################################
+# Importing the dataset
+#########################################################################################################
+
+dataset = pd.read_csv('Data.csv')
+print('\rData info: ')
+print(dataset.hist)
+print('-' * 80)
+dataset.info()
+print('-' * 80)
+print(dataset.describe())
+print('-' * 80)
+X = dataset.iloc[:, [0, 1, 3]].values
+Y = dataset.iloc[:, 2].values  # check for the independent variable to be placed on the last column.
+
+#########################################################################################################
+# Taking care of missing Data
+#########################################################################################################
+
+imputer = SimpleImputer(missing_values=np.nan, strategy='mean')  # most_frequent works well too.
+imputer.fit(X[:, 1:3])
+X[:, 1:3] = imputer.transform(X[:, 1:3])  # Create new Data Frame
+new_dataset = pd.DataFrame(X, columns=['Country', 'Age', 'Salary'])
+print('\rNew Dataset (checking no null values): ')
+print(new_dataset.hist)
+print('-' * 80)
+
+#########################################################################################################
+# Encoding Categorical Data
+#########################################################################################################
+
+# Encoding the Independent Variable
+column_transformer = ColumnTransformer(transformers=[('encoder', OneHotEncoder(), [0])],
+                                       remainder='passthrough')  # Categorical Data
+X = np.array(column_transformer.fit_transform(X))  # Need to be an array to work
+print('\nOne Hot Encoder - Independent Var:')
+print(X)
+print('-' * 80)
+
+# Encoding the Dependent Variable
+label_encoder = LabelEncoder()
+one_d_array = Y.ravel()
+Y = label_encoder.fit_transform(one_d_array) 
+print('\nOne Hot Encoder - Dependent Var:')
+print(Y)
+print('-' * 80)
+plt.scatter(X[:, 4:5], Y)
+plt.show()
+plt.scatter(X[:, 3:4], Y)
+plt.show()
+
+#########################################################################################################
+# Splitting the Data Set in the Training Set and Test Set
+#########################################################################################################
+
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+print('\n8 train observations: ')
+print(X_train)
+print('\n2 test observations: ')
+print(X_test)
+print('-' * 80)
+
+#########################################################################################################
+# Feature Scaling
+#########################################################################################################
+'''
+Models where it is important to apply: PCA, KNN, K-Mean, Neural Networks.
+'''
+
+sc = StandardScaler()
+X_train[:, 3:] = sc.fit_transform(X_train[:, 3:])
+X_test[:, 3:] = sc.transform(X_test[:, 3:])
+print('\nScaled X_train matrix ')
+print(X_train)
